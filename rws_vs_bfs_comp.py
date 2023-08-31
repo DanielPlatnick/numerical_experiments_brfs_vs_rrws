@@ -51,7 +51,7 @@ def make_rws_table(depth, num_goals, precision, b, error):
 
 
 def bfs_min(d, g, b):
-  return b**d - g + g
+  return ((b**d) - 1)/(b - 1) + 1
 
 # is this generalization for goals g correct?
 def bfs_max(d, g, b):
@@ -72,7 +72,7 @@ def make_bfs_min_table(depth, num_goals, b):
 
   df = pd.DataFrame(data).transpose()
   df.columns = [f"Num_goals={g}" for g in range(1, num_goals+1)]
-  df.index = [f"Depth={d}" for d in range(1, depth+1)]
+  df.index = [f"Depth={d}" for d in range(2, depth+1)]
   return df
 
 
@@ -96,8 +96,8 @@ def make_bfs_max_table(depth, num_goals, b):
 b = 2
 d = 15
 g = 12
-precision = 750000
-error=2
+precision = 300000
+error=1
 rws_result_table = make_rws_table(depth=d, num_goals=g, precision=precision, b=b, error=error)
 
 print(f"rws table b = {b}, error level = {error}, measuring in terms of expansions: \n {rws_result_table}")
@@ -106,11 +106,11 @@ print(f"rws table b = {b}, error level = {error}, measuring in terms of expansio
 bfsmin_result_table = make_bfs_min_table(d, g, b)
 print(f"bfs min table b = {b}: \n {bfsmin_result_table}")
 
-bfsmax_result_table = make_bfs_max_table(d, g, b)
-print(f"bfs max table b = {b}: \n {bfsmax_result_table}")
+# bfsmax_result_table = make_bfs_max_table(d, g, b)
+# print(f"bfs max table b = {b}: \n {bfsmax_result_table}")
 
 
 filename = "result_tables_test_error_3_b2.csv"
-rws_result_table.to_csv(filename, mode='a', index=True)
-bfsmin_result_table.to_csv(filename, mode='a', header=False, index=True)
-bfsmax_result_table.to_csv(filename, mode='a', header=False, index=True)
+# rws_result_table.to_csv(filename, mode='a', index=True)
+# bfsmin_result_table.to_csv(filename, mode='a', header=False, index=True)
+# bfsmax_result_table.to_csv(filename, mode='a', header=False, index=True)

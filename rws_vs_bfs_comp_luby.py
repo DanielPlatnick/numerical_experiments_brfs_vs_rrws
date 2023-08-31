@@ -1,21 +1,34 @@
 import pandas as pd
+import math
 
-# restart at depth d and goals located at depth d
-def luby_sequence(i):
-  if i == 0:
-      return 1
+def a6519_sequence(n, d):
+    sequence = []
+    for i in range(1, n + 1):
+        term = math.gcd(d ** i, i)
+        sequence.append(term)
+    return sequence
 
-  k = 1
-  while (2**k - 1) < i:
-      k += 1
 
-  #case 1
-  if i == 2**k - 1:
-      return 2**(k - 1)
-
-  #case 2
-  elif 2**(k-1) <= i < 2**k - 1:
-      return luby_sequence(i - 2**(k - 1)+1)
+def luby_sequence(n, scale):
+    sequence = [1]
+    counts = {1: 1}
+    
+    for i in range(1, n):
+        last_term = sequence[-1]
+        
+        if counts[last_term] % 2 == 0:
+            next_term = scale * last_term
+        else:
+            next_term = 1
+        
+        sequence.append(next_term)
+        
+        if next_term in counts:
+            counts[next_term] += 1
+        else:
+            counts[next_term] = 1
+    
+    return sequence
 
 
 def expected_num_rws(d, g, precision, b):
@@ -28,18 +41,18 @@ def expected_num_rws(d, g, precision, b):
   exp_count = 0
   succ_count = 0
 
-  for walk_len in range(0, precision):
+  for walk in range(0, precision):
 
-    if luby_seq[walk_len] < d:
-      exp_count += luby_seq[walk_len]
+    if seq[walk] < d:
+      exp_count += seq[walk]
 
     else:
       succ_count += 1
       expected_val +=(exp_count + d) *  prob_succ * prob_fail**(succ_count-1) 
       # print("debug", exp_count,d,prob_succ, prob_fail**(succ_count-1), succ_count)
-      exp_count += luby_seq[walk_len]
+      exp_count += seq[walk]
           
-  return expected_val
+  return expected_val + 1
 
 
 def make_rws_table(depth, num_goals, precision, b):
@@ -47,7 +60,7 @@ def make_rws_table(depth, num_goals, precision, b):
   for g in range(1,num_goals+1):
 
     data_to_append = []
-    for d in range(2,depth+1):
+    for d in range(1,depth+1):
         expected_rws = 1
         if g <= b**d: expected_rws = expected_num_rws(d, g, precision, b)
         expected_rws = round(expected_rws, 3)
@@ -60,7 +73,7 @@ def make_rws_table(depth, num_goals, precision, b):
   df = pd.DataFrame(data).transpose()
   # print(df)
   df.columns = [f"Num_goals={g}" for g in range(1, num_goals+1)]
-  df.index = [f"Depth={d}" for d in range(2, depth+1)]
+  df.index = [f"Depth={d}" for d in range(1, depth+1)]
   # df = df.astype(int)  # Specify integer data type
   return df
 
@@ -115,11 +128,13 @@ def make_bfs_max_table(depth, num_goals, b):
 b = 3
 d = 9
 g = 18
-precision = 900000
+precision = 10000
 
-luby_seq = []
-for i in range(1,precision+1):
-  luby_seq.append(luby_sequence(i))
+luby_seq = luby_sequence(precision,2)
+A6519_seq = a6519_sequence(precision, 2)
+
+seq = luby_seq
+# seq = A6519_seq
 
 
 rws_result_table = make_rws_table(depth=d, num_goals=g, precision=precision, b=b)
