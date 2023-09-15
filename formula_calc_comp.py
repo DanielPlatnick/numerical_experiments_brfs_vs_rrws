@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 
 def error_adj_formula(e, d, s):
     return (e * d) / s - d * (e - 1) + 1
@@ -12,7 +13,7 @@ def error_adj_formula_old(e, d, s):
 def make_charts():
     to_csv = []
     for b in range(2, 6):
-        for e in range(1, 6):
+        for e in range(1, 6): 
             for d in range(2, 200):
                 g = 0
                 bfs_min = float(((b**d) - 1)/(b - 1)) + 1
@@ -45,7 +46,7 @@ def make_charts():
         ax.set_xlabel('Depth')
         ax.set_ylabel('Goals/Cutoff')
 
-        for e_value in range(1, 6):
+        for e_value in range(1, 2):
             data = df[(df['b'] == b_value) & (df['e'] == e_value)]
             ax.plot(data['d'], data['cutoff'], label=f'e = {e_value}')
 
@@ -109,7 +110,7 @@ def make_bfs_min_table(depth, num_goals, b):
     for d in range(1,depth+1):
       nodes_to_expand = 2
       if g <= b ** d: nodes_to_expand = bfs_min(d, g, b)
-      data_to_append.append(nodes_to_expand)
+      data_to_append.append(math.round(nodes_to_expand,3))
     data.append(data_to_append)
 
   df = pd.DataFrame(data).transpose()
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
 
     filename = "result_tables_new_vs_old_formula2.csv"
-    rws_result_table.to_csv(filename, mode='a', index=True)
-    bfsmin_result_table.to_csv(filename, mode='a', header=False, index=True)
-    rws_result_table_old.to_csv(filename, mode='a', header=False, index=True)
+    # rws_result_table.to_csv(filename, mode='a', index=True)
+    # bfsmin_result_table.to_csv(filename, mode='a', header=False, index=True)
+    # rws_result_table_old.to_csv(filename, mode='a', header=False, index=True)
 

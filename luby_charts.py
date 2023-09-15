@@ -1,9 +1,22 @@
+import sys
+import math
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
+def rrw_error_adj_formula(e, d, s):
+    return (e * d) / s - d * (e - 1) + 1
 
 
-def luby_sequence(n, scale):
+def a6519_sequence(n):
+    sequence = []
+    for i in range(1, n + 1):
+        term = math.gcd(2 ** i, i)
+        sequence.append(term)
+    return sequence
+
+
+def luby_sequence(n):
     sequence = [1]
     counts = {1: 1}
     
@@ -11,7 +24,7 @@ def luby_sequence(n, scale):
         last_term = sequence[-1]
         
         if counts[last_term] % 2 == 0:
-            next_term = scale * last_term
+            next_term = 2 * last_term
         else:
             next_term = 1
         
@@ -24,40 +37,50 @@ def luby_sequence(n, scale):
     
     return sequence
 
-def expected_num_rws(d, g, precision, b):
-    prob_succ = g / (b**d)
-    prob_fail = ((b**d) - g) / b**d
+def expected_num_luby_rws(d, g, precision, b, scale):
+  prob_succ = g / (b**d)
+  prob_fail = ((b**d) - g) / b**d
+ 
 
-    seq = luby_sequence(precision,3)
+  expected_val = 0
 
-    expected_val = 0
+  exp_count = 0
+  succ_count = 0
 
-    exp_count = 0
-    succ_count = 0
+  for walk in range(0, precision):
+    current_walk = seq[walk]
+    if scale == 'none':
+        current_walk = current_walk
+    if scale == 'd':
+        current_walk = d * current_walk
+    if scale == 'd/2':
+        current_walk = (d/2) * current_walk
+    if scale == '2d': 
+        current_walk = (2 * d) * current_walk
+    if scale == 'luby*2': 
+        current_walk = 2 * current_walk
 
-    for walk in range(0, precision):
+    if current_walk < d:
+      exp_count += current_walk
 
-        if seq[walk] < d:
-            exp_count += seq[walk]
-
-        else:
-            succ_count += 1
-            expected_val +=(exp_count + d) *  prob_succ * prob_fail**(succ_count-1) 
-        # print("debug", exp_count,d,prob_succ, prob_fail**(succ_count-1), succ_count)
-            exp_count += seq[walk]
-            
-    return expected_val + 1
+    else:
+      succ_count += 1
+      expected_val +=(exp_count + d) *  prob_succ * prob_fail**(succ_count-1) 
+      # print("debug", exp_count,d,prob_succ, prob_fail**(succ_count-1), succ_count)
+      exp_count += current_walk
+          
+  return expected_val + 1
 
 
-def make_rws_table(depth, num_goals, precision, b):
+def make_rws_table(depth, num_goals, precision, b, scale):
   data = []
   for g in range(1,num_goals+1):
 
     data_to_append = []
     for d in range(1,depth+1):
         expected_rws = 1
-        if g <= b**d: expected_rws = expected_num_rws(d, g, precision, b)
-        expected_rws = round(expected_rws, 3)
+        if g <= b**d: expected_rws = expected_num_luby_rws(d, g, precision, b, scale)
+        expected_rws = round(expected_rws,3)
         data_to_append.append(expected_rws)
         # else: data_to_append.append(1)
     data.append(data_to_append)
@@ -71,13 +94,83 @@ def make_rws_table(depth, num_goals, precision, b):
   # df = df.astype(int)  # Specify integer data type
   return df
 
-b = 3
-d = 9
-g = 18
-precision = 600000
+
+def make_dataframe(depth, precision, branch, scale, formula, type):
+    to_csv = []
+    for b in range(2,3):
+            for d in range(2, depth+1):
+                g = 0
+                bfs_min = float(((b**d) - 1)/(b - 1)) + 1
+
+                rws_expected = float('inf')
+                # print(bfs_min, rws_expected)
+                while rws_expected - 0.000001 >= bfs_min:
+                    g += 1
+                    s = g / (b ** d)
+                    if type == 'luby':
+                        rws_expected = formula(d=d, g=g, precision=precision, b=b, scale=scale)
+                    if type =='rrw_e':
+                        rws_expected = formula(e=1, d=d, s=s)
+                    # print(rws_expected)
+                    # print(f"d ={d}, g={g}, rws={rws_expected}")
+                    print(f'd={d}, {rws_expected}, {bfs_min}, g={g}')
+                    if rws_expected <= bfs_min:
+                        to_csv.append([b, d, g])
+                        break
+
+    df = pd.DataFrame(to_csv)
+    df.columns = ["b", "d", "cutoff"]
+
+    return df
 
 
 
-rws_result_table = make_rws_table(depth=d, num_goals=g, precision=precision, b=b)
 
-print(f"rws table b = {b}, measuring in terms of expansions: \n {rws_result_table}")
+
+
+
+b = 2
+d = 15
+g = 12
+precision = 90000
+seq = luby_sequence(precision)
+
+
+# print(expected_num_luby_rws(d=11, g=1, precision=precision, b=b, scale='none'))
+
+df_plot1 = make_dataframe(depth=d, precision=precision, branch=b, scale='none', formula=expected_num_luby_rws, type='luby')
+# df_plot2 = make_dataframe(depth=d, precision=precision, branch=b, scale='d', formula=expected_num_luby_rws, type='luby')
+# df_plot3 = make_dataframe(depth=d, precision=precision, branch=b, scale='d/2', formula=expected_num_luby_rws, type='luby')
+df_plot4 = make_dataframe(depth=d, precision=precision, branch=b, scale='none', formula=rrw_error_adj_formula, type='rrw_e')
+df_plot5 = make_dataframe(depth=d, precision=precision, branch=b, scale='2d', formula=expected_num_luby_rws, type='luby')
+df_plot6 = make_dataframe(depth=d, precision=precision, branch=b, scale='luby*2', formula=expected_num_luby_rws, type='luby')
+
+
+
+# print(df_plot1, df_plot2, df_plot3, df_plot4)
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Plot each DataFrame on the same axis
+ax.plot(df_plot1['d'], df_plot1['cutoff'], label='luby')
+# ax.plot(df_plot2['d'], df_plot2['cutoff'], label='luby_d')
+# ax.plot(df_plot3['d'], df_plot3['cutoff'], label='luby_d/2')
+ax.plot(df_plot4['d'], df_plot4['cutoff'], label='RRWe_1')
+ax.plot(df_plot5['d'], df_plot5['cutoff'], label='luby_2d')
+ax.plot(df_plot6['d'], df_plot6['cutoff'], label='luby_*2')
+
+
+
+# Set labels and legend
+ax.set_xlabel('Depth')
+ax.set_ylabel('Goal Cutoff')
+ax.set_title(f'b = {b}')
+ax.legend()
+
+# Show the plot
+plt.show()
+
+
+
+
+# print(make_rws_table(depth=d, num_goals=g, precision=precision, b=b, scale='d/2'))

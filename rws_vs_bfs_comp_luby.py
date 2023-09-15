@@ -125,10 +125,10 @@ def make_bfs_max_table(depth, num_goals, b):
   df.index = [f"Depth={d}" for d in range(1, depth+1)]
   return df
 
-b = 3
-d = 9
-g = 18
-precision = 10000
+b = 2
+d = 15
+g = 10
+precision = 100000
 
 luby_seq = luby_sequence(precision,2)
 A6519_seq = a6519_sequence(precision, 2)
