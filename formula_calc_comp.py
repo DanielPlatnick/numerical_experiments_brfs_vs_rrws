@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 def error_adj_formula(e, d, s):
     return (e * d) / s - d * (e - 1) + 1
@@ -10,10 +11,10 @@ def error_adj_formula_old(e, d, s):
 
 
 # # print(error_adj_formula(1, 8, ))
-def make_charts():
+def make_charts(e_val):
     to_csv = []
     for b in range(2, 6):
-        for e in range(1, 6): 
+        for e in range(1, e_val): 
             for d in range(2, 200):
                 g = 0
                 bfs_min = float(((b**d) - 1)/(b - 1)) + 1
@@ -35,7 +36,7 @@ def make_charts():
 
 
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-    fig.suptitle("Graphs for Different 'b' Values")
+    fig.suptitle("RRWe Graphs for Different 'b' Values")
 
 # Find the common y-axis limits for all subplots
     y_min = df['cutoff'].min()
@@ -46,13 +47,18 @@ def make_charts():
         ax.set_xlabel('Depth')
         ax.set_ylabel('Goals/Cutoff')
 
-        for e_value in range(1, 2):
+        for e_value in range(1, e_val):
             data = df[(df['b'] == b_value) & (df['e'] == e_value)]
             ax.plot(data['d'], data['cutoff'], label=f'e = {e_value}')
+            # Add the new line y = edb
+            d_values = np.arange(2, 200)  # Assuming the same range of d values
+            y_values = e_value * d_values * (b_value-.5)  # Calculate y = edb
+            ax.plot(d_values, y_values, linestyle='--', label=f'bound {e_value} = ed(b-1/2)', color='red')
 
         ax.set_ylim(y_min, y_max)  # Set the y-axis limits
         ax.legend()
         ax.grid(True)
+        
 
     plt.tight_layout()
     plt.show()
@@ -119,7 +125,7 @@ def make_bfs_min_table(depth, num_goals, b):
   return df
 
 if __name__ == "__main__":
-    make_charts()
+    make_charts(4)
 
     b = 3
     d = 15
