@@ -15,7 +15,7 @@ def make_charts(e_val):
     to_csv = []
     for b in range(2, 6):
         for e in range(1, e_val): 
-            for d in range(2, 200):
+            for d in range(2, 11):
                 g = 0
                 bfs_min = float(((b**d) - 1)/(b - 1)) + 1
 
@@ -51,9 +51,9 @@ def make_charts(e_val):
             data = df[(df['b'] == b_value) & (df['e'] == e_value)]
             ax.plot(data['d'], data['cutoff'], label=f'e = {e_value}')
             # Add the new line y = edb
-            d_values = np.arange(2, 200)  # Assuming the same range of d values
-            y_values = e_value * d_values * (b_value-.5)  # Calculate y = edb
-            ax.plot(d_values, y_values, linestyle='--', label=f'bound {e_value} = ed(b-1/2)', color='red')
+            d_values = np.arange(2, 11)  # Assuming the same range of d values
+            y_values = e_value * d_values * (b_value-1) + (2)  # Calculate y = edb
+            ax.plot(d_values, y_values, linestyle='--', label=f'bound {e_value} = ed(b-.5)', color='red')
 
         ax.set_ylim(y_min, y_max)  # Set the y-axis limits
         ax.legend()
