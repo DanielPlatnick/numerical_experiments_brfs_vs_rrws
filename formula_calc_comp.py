@@ -9,24 +9,68 @@ def error_adj_formula(e, d, s):
 def error_adj_formula_old(e, d, s):
     return (e * d + 1) / s - d * (e - 1)
 
+def bfs_min_geo_series(b, d, g):
+    return float(((b**d) - 1)/(b - 1) + 1)
+
+def hypergeo_no_replacement(n, gd, j):    
+    # Calculate the expected value of non-goal nodes (Zj)
+    total_nodes = n + gd
+    if n == 0:
+        n = 1
+        j = n - 1
+
+    first_term = n / (total_nodes - n + 1)
+    second_term = 1 - (math.comb(n - 1, j) / math.comb(total_nodes, j))
+    Zj_expected = first_term * second_term + 1  
+    
+    return Zj_expected
+
+def bfs_avg_stack_overflow(b, d, g):
+    
+    # Calculate the number of non-goal nodes
+    n = (b ** d) - g
+    
+    # Calculate the total number of nodes up to the goal depth
+    total_nodes_until_goal = ((b ** d) - 1) / (b - 1)
+    
+    # Estimate the average number of expansions in the goal depth
+    #not sure if j should be n or gd here
+    j = n-1
+
+    average_goal_depth_expansions = hypergeo_no_replacement(n, g, j)
+    
+    final_average = total_nodes_until_goal + average_goal_depth_expansions
+    # print(total_nodes_until_goal, average_goal_depth_expansions)
+    return final_average
+
+def bfs_avg_everitt(b, d, g):
+    if g == 0:
+        g = 1
+    return float(((b**d) - 1)/(b - 1) + 1 + (1/(g/b**d)))
 
 # # print(error_adj_formula(1, 8, ))
-def make_charts(e_val):
+def make_charts(e_val, formula):
     to_csv = []
     for b in range(2, 6):
-        for e in range(1, e_val): 
-            for d in range(2, 11):
+        for e in range(1, 4): 
+            for d in range(2, 20):
                 g = 0
-                bfs_min = float(((b**d) - 1)/(b - 1)) + 1
+                bfs_min = formula(b,d,g)
+                
 
                 rws_expected = float('inf')
                 while rws_expected - 0.000001 >= bfs_min:
-                    g += 1
+                    # g += 1
+                    if rws_expected - bfs_min > 2000: g += 2
+                    else: g += 1
+                    bfs_min = formula(b,d,g)
                     s = g / (b ** d)
                     rws_expected = error_adj_formula(e, d, s)
+                    print(f"rws_expected = {rws_expected}, bfs_min = {bfs_min}, d = {d}, g = {g}, b = {b}")
                     # print(f"d ={d}, g={g}, rws={rws_expected}")
 
                     if rws_expected <= bfs_min:
+                        print('hi')
                         to_csv.append([b, e, d, g])
                         break
 
@@ -53,7 +97,7 @@ def make_charts(e_val):
             # Add the new line y = edb
             d_values = np.arange(2, 11)  # Assuming the same range of d values
             y_values = e_value * d_values * (b_value-1) + (2)  # Calculate y = edb
-            ax.plot(d_values, y_values, linestyle='--', label=f'bound {e_value} = ed(b-.5)', color='red')
+            # ax.plot(d_values, y_values, linestyle='--', label=f'bound {e_value} = ed(b-.5)', color='red')
 
         ax.set_ylim(y_min, y_max)  # Set the y-axis limits
         ax.legend()
@@ -105,8 +149,7 @@ def make_rws_table(depth, num_goals, b, error, formula_type):
     # df = df.astype(int)  # Specify integer data type
     return df
 
-def bfs_min(d, g, b):
-    return ((b**d) - 1)/(b - 1) + 1
+    
 
 def make_bfs_min_table(depth, num_goals, b):
   data = []
@@ -115,7 +158,7 @@ def make_bfs_min_table(depth, num_goals, b):
     data_to_append = []
     for d in range(1,depth+1):
       nodes_to_expand = 2
-      if g <= b ** d: nodes_to_expand = bfs_min(d, g, b)
+      if g <= b ** d: nodes_to_expand = bfs_min_geo_series(d, b)
       data_to_append.append(math.round(nodes_to_expand,3))
     data.append(data_to_append)
 
@@ -125,25 +168,25 @@ def make_bfs_min_table(depth, num_goals, b):
   return df
 
 if __name__ == "__main__":
-    make_charts(4)
+    make_charts(e_val=4, formula=bfs_avg_everitt)
 
-    b = 3
+    b = 2
     d = 15
     g = 12
-    error = 1
+    # error = 1
 
-    rws_result_table = make_rws_table(depth=d, num_goals=g, b=b, error=error, formula_type=1)
-    print(f"rws results table (new formula), b={b}, e={error}: \n {rws_result_table}")
+    # rws_result_table = make_rws_table(depth=d, num_goals=g, b=b, error=error, formula_type=1)
+    # print(f"rws results table (new formula), b={b}, e={error}: \n {rws_result_table}")
 
-    bfsmin_result_table = make_bfs_min_table(d, g, b)
-    print(f"bfs min table b = {b}: \n {bfsmin_result_table}")
+    # bfsmin_result_table = make_bfs_min_table(d, g, b)
+    # print(f"bfs min table b = {b}: \n {bfsmin_result_table}")
 
-    rws_result_table_old = make_rws_table(depth=d, num_goals=g, b=b, error=error, formula_type=2)
-    print(f"rws results table (old formula), b={b}, e={error}: \n {rws_result_table_old}")
+    # rws_result_table_old = make_rws_table(depth=d, num_goals=g, b=b, error=error, formula_type=2)
+    # print(f"rws results table (old formula), b={b}, e={error}: \n {rws_result_table_old}")
 
 
 
-    filename = "result_tables_new_vs_old_formula2.csv"
+    # filename = "result_tables_new_vs_old_formula2.csv"
     # rws_result_table.to_csv(filename, mode='a', index=True)
     # bfsmin_result_table.to_csv(filename, mode='a', header=False, index=True)
     # rws_result_table_old.to_csv(filename, mode='a', header=False, index=True)
